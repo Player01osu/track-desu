@@ -7,7 +7,6 @@ use std::{
     ffi::OsStr,
     fmt::Display,
     io,
-    mem::size_of_val,
     path::{Path, PathBuf},
 };
 lazy_static! {
@@ -139,7 +138,9 @@ fn short_form_args(args: &str) -> Vec<Result<Argument>> {
             'd' => Ok(GitDir),
             'v' => Ok(Verbose),
             'V' => Ok(Version),
-            _ => return Err(anyhow!("Invalid argument: {}", c)),
+            _ => {
+                return Err(anyhow!("Invalid argument: {}", c));
+            }
         })
         .collect::<Vec<Result<Argument>>>()
 }
@@ -244,6 +245,10 @@ fn execute_args(args: Vec<Argument>) -> Result<()> {
         }
     }
 
+    if files.is_empty() {
+        return Err(anyhow!("missing file operand"));
+    }
+
     track(&opts, files)?;
 
     Ok(())
@@ -270,7 +275,7 @@ fn main() -> Result<()> {
             eprintln!("{HELP}");
             return Ok(());
         }
-        n => {
+        _ => {
             parse_args(&args[1..])?;
         }
     }
