@@ -21,7 +21,7 @@ const HELP: &'static str = r#"usage: tracker-desu
 Track dotfiles in a git directory with a single command."#;
 const VERSION: &str = "Tracker-desu: 0.0.0";
 
-fn recursive_copy<T: AsRef<Path> + AsRef<OsStr>>(path: &T, to_file: &str) -> Result<(), io::Error> {
+fn path_check<T: AsRef<Path> + AsRef<OsStr>>(path: &T) -> Result<(), io::Error>{
     let path = Path::new(path);
     if !path.exists() {
         return Err(io::Error::new(
@@ -29,7 +29,12 @@ fn recursive_copy<T: AsRef<Path> + AsRef<OsStr>>(path: &T, to_file: &str) -> Res
             format!("cannot stat '{}': No such file or directory", path.to_string_lossy()),
         ));
     }
+    Ok(())
+}
 
+fn recursive_copy<T: AsRef<Path> + AsRef<OsStr>>(path: &T, to_file: &str) -> Result<(), io::Error> {
+    path_check(path)?;
+    let path = Path::new(path);
     fn _recurse(path: &Path, to_file: &str) -> Result<(), io::Error> {
         if path.is_file() {
             std::fs::copy(path, &to_file)?;
@@ -58,6 +63,7 @@ fn track(opts: &HashSet<Opt>, files: Vec<&String>) -> Result<()> {
         }
     } else {
         for path in files {
+            path_check(path)?;
             copy_track(path, opts.contains(&Opt::Recursive))?;
         }
     }
