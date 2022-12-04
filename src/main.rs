@@ -26,13 +26,15 @@ fn recursive_copy<T: AsRef<Path> + AsRef<OsStr>>(path: &T, to_file: &str) -> Res
     if !path.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
-            "File does not exist",
+            format!("cannot stat '{}': No such file or directory", path.to_string_lossy()),
         ));
     }
 
     fn _recurse(path: &Path, to_file: &str) -> Result<(), io::Error> {
         if path.is_file() {
             std::fs::copy(path, &to_file)?;
+        } else if path.is_symlink() {
+            std::os::unix::fs::symlink(std::fs::canonicalize(path)?, to_file)?;
         } else {
             std::fs::create_dir(&to_file)?;
             for path in path.read_dir()? {
